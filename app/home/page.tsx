@@ -13,6 +13,7 @@ export default function HomePage() {
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [matches, setMatches] = useState<MatchView[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
+  const [matchName, setMatchName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -64,7 +65,7 @@ export default function HomePage() {
       const res = await fetch("/api/matches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ name: matchName }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -72,6 +73,7 @@ export default function HomePage() {
         return;
       }
       setSelected([]);
+      setMatchName("");
       router.push(`/match/${data.match.id}`);
     } finally {
       setBusy(false);
@@ -101,7 +103,29 @@ export default function HomePage() {
     setPasswordMsg("Password updated.");
   }
 
-  const canCreate = true;
+  async function deleteMatch(id: string) {
+    if (!window.confirm("Delete this match for everyone?")) return;
+    const res = await fetch(`/api/matches/${id}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Could not delete match.");
+      return;
+    }
+    await load();
+  }
+
+  async function deleteUser(id: string) {
+    if (!window.confirm(`Delete user ${id}?`)) return;
+    const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Could not delete user.");
+      return;
+    }
+    await load();
+  }
+
+  const canCreate = matchName.trim().length > 0;
   const createdLabel = useMemo(
     () => new Date().toLocaleString(),
     [],
@@ -135,35 +159,49 @@ export default function HomePage() {
           ) : (
             <div className="grid gap-4">
               {matches.map((match) => (
-                <Link
+                <div
                   key={match.id}
-                  href={`/match/${match.id}`}
                   className="rounded-3xl border border-white/10 bg-pitch-900/70 p-5 transition hover:border-turf-500/40"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="font-display text-3xl tracking-wide">
-                      Match {match.id.slice(-6).toUpperCase()}
-                    </h2>
-                    <StatusBadge status={match.status} />
+                    <Link href={`/match/${match.id}`} className="min-w-0">
+                      <h2 className="font-display text-3xl tracking-wide">
+                        {match.name}
+                      </h2>
+                    </Link>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <StatusBadge status={match.status} />
+                      {user.isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => void deleteMatch(match.id)}
+                          className="rounded-full border border-volley-500/40 px-3 py-1 text-xs uppercase tracking-widest text-volley-400"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <p className="mt-2 text-sm text-white/50">
-                    {match.pickedCount}/6 picked · {match.members.length} in room · created by{" "}
-                    {match.createdBy.displayId}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {match.members.length === 0 && (
-                      <span className="text-xs text-white/40">Open to everyone</span>
-                    )}
-                    {match.members.map((member) => (
-                      <span
-                        key={member.id}
-                        className="rounded-full bg-white/10 px-3 py-1 text-xs"
-                      >
-                        {member.displayId}
-                      </span>
-                    ))}
-                  </div>
-                </Link>
+                  <Link href={`/match/${match.id}`}>
+                    <p className="mt-2 text-sm text-white/50">
+                      {match.pickedCount}/6 picked · {match.members.length} in room · created by{" "}
+                      {match.createdBy.displayId}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {match.members.length === 0 && (
+                        <span className="text-xs text-white/40">Open to everyone</span>
+                      )}
+                      {match.members.map((member) => (
+                        <span
+                          key={member.id}
+                          className="rounded-full bg-white/10 px-3 py-1 text-xs"
+                        >
+                          {member.displayId}
+                        </span>
+                      ))}
+                    </div>
+                  </Link>
+                </div>
               ))}
             </div>
           )}
@@ -178,14 +216,35 @@ export default function HomePage() {
               <p className="text-xs uppercase tracking-[0.25em] text-white/40">Admin</p>
               <h2 className="font-display text-3xl">Create match</h2>
               <p className="mt-1 text-sm text-white/50">
-                Create a room anytime. Anyone can join. 6 hidden cards still split into Football and Volleyball.
+                Name the room, then create it. Anyone can join. 6 hidden tickets split into Football and Volleyball.
               </p>
-              {users.length > 0 && (
-                <p className="mt-3 text-sm text-white/40">
-                  {users.length} {users.length === 1 ? "person" : "people"} on the platform
-                </p>
-              )}
-              <div className="mt-3 max-h-64 space-y-2 overflow-auto pr-1">
+              <input
+                value={matchName}
+                onChange={(e) => setMatchName(e.target.value)}
+                placeholder="Match name"
+                maxLength={40}
+                className="mt-4 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 outline-none ring-turf-500/40 focus:ring-2"
+              />
+              {error && <p className="mt-3 text-sm text-volley-400">{error}</p>}
+              <button
+                type="submit"
+                disabled={!canCreate || busy}
+                className="mt-4 w-full rounded-2xl bg-turf-500 py-3 font-semibold text-pitch-950 disabled:opacity-40"
+              >
+                {busy ? "Creating…" : "Create match"}
+              </button>
+              <p className="mt-2 text-[11px] text-white/30">Local time {createdLabel}</p>
+            </form>
+
+            <section className="rounded-3xl border border-white/10 bg-pitch-900/80 p-5">
+              <h2 className="font-display text-3xl">Users</h2>
+              <p className="mt-1 text-sm text-white/50">
+                Platform IDs. Admins cannot be deleted.
+              </p>
+              <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
+                {users.length === 0 && (
+                  <p className="text-sm text-white/40">No users yet.</p>
+                )}
                 {users.map((item) => (
                   <div
                     key={item.id}
@@ -197,19 +256,19 @@ export default function HomePage() {
                         <span className="ml-2 text-xs text-white/40">admin</span>
                       )}
                     </span>
+                    {!item.isAdmin && item.id !== user.id && (
+                      <button
+                        type="button"
+                        onClick={() => void deleteUser(item.id)}
+                        className="rounded-full border border-volley-500/40 px-3 py-1 text-xs uppercase tracking-widest text-volley-400"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
-              {error && <p className="mt-3 text-sm text-volley-400">{error}</p>}
-              <button
-                type="submit"
-                disabled={!canCreate || busy}
-                className="mt-4 w-full rounded-2xl bg-turf-500 py-3 font-semibold text-pitch-950 disabled:opacity-40"
-              >
-                {busy ? "Creating…" : "Create match"}
-              </button>
-              <p className="mt-2 text-[11px] text-white/30">Local time {createdLabel}</p>
-            </form>
+            </section>
 
             <form
               onSubmit={(event) => void updatePassword(event)}

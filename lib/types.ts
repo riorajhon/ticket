@@ -24,6 +24,7 @@ export type Groups = {
 
 export type MatchView = {
   id: string;
+  name: string;
   status: "waiting" | "active" | "completed";
   createdAt: string;
   createdBy: Member;

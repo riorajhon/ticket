@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TicketCard } from "@/components/TicketCard";
@@ -10,10 +10,12 @@ import type { MatchView, PublicUser } from "@/lib/types";
 
 export default function MatchPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [user, setUser] = useState<PublicUser | null>(null);
   const [match, setMatch] = useState<MatchView | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [revealSport, setRevealSport] = useState<"football" | "volleyball" | null>(null);
 
   async function loadUser() {
     const res = await fetch("/api/auth");
@@ -42,6 +44,12 @@ export default function MatchPage() {
   }, []);
 
   useEffect(() => {
+    if (!revealSport) return;
+    const timer = window.setTimeout(() => setRevealSport(null), 1600);
+    return () => window.clearTimeout(timer);
+  }, [revealSport]);
+
+  useEffect(() => {
     if (!params.id) return;
     void loadMatch();
     const timer = window.setInterval(() => void loadMatch(), 1000);
@@ -63,6 +71,22 @@ export default function MatchPage() {
     }
   }
 
+  async function deleteMatch() {
+    if (!window.confirm("Delete this match for everyone?")) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/matches/${params.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Could not delete match.");
+        return;
+      }
+      router.push("/home");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function pickCard(position: number) {
     if (!match || match.status !== "active" || match.myPick !== null) return;
     setBusy(true);
@@ -76,6 +100,28 @@ export default function MatchPage() {
       if (!res.ok) {
         setError(data.error || "Could not pick that card.");
         return;
+      }
+      if (data.sport && user) {
+        setMatch((current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            myPick: position,
+            pickedCount: Math.min(6, current.pickedCount + 1),
+            cards: current.cards.map((card) =>
+              card.position === position
+                ? {
+                    ...card,
+                    taken: true,
+                    sport: data.sport,
+                    pickedById: user.id,
+                    pickedByDisplay: user.displayId,
+                  }
+                : card,
+            ),
+          };
+        });
+        setRevealSport(data.sport as "football" | "volleyball");
       }
       await loadMatch();
     } finally {
@@ -131,6 +177,25 @@ export default function MatchPage() {
 
   return (
     <main className="min-h-screen pb-16">
+      {revealSport && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/35">
+          <div className="reveal-pop rounded-[2rem] border border-white/15 bg-pitch-900/95 px-10 py-8 text-center shadow-card">
+            <div className="mb-3 flex justify-center sport-spin">
+              {revealSport === "football" ? (
+                <FootballIcon className="h-20 w-20" />
+              ) : (
+                <VolleyballIcon className="h-20 w-20" />
+              )}
+            </div>
+            <p className="font-display text-6xl tracking-wide">
+              {revealSport === "football" ? "FOOTBALL" : "VOLLEYBALL"}
+            </p>
+            <p className="mt-2 text-sm uppercase tracking-[0.25em] text-white/50">
+              Your ticket
+            </p>
+          </div>
+        </div>
+      )}
       <Nav user={user} />
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -139,7 +204,7 @@ export default function MatchPage() {
               Room · {match.pickedCount}/6 selected
             </p>
             <h1 className="font-display text-5xl">
-              Match {match.id.slice(-6).toUpperCase()}
+              {match.name}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -152,6 +217,16 @@ export default function MatchPage() {
                 className="rounded-full bg-turf-500 px-5 py-2 font-semibold text-pitch-950"
               >
                 {busy ? "Starting…" : "Start"}
+              </button>
+            )}
+            {user.isAdmin && (
+              <button
+                type="button"
+                onClick={() => void deleteMatch()}
+                disabled={busy}
+                className="rounded-full border border-volley-500/40 px-5 py-2 font-semibold text-volley-400"
+              >
+                Delete match
               </button>
             )}
           </div>

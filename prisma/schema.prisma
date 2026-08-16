@@ -33,6 +33,7 @@ model User {
 
 model Match {
   id          String        @id @default(cuid())
+  name        String        @default("Match")
   createdById String
   createdBy   User          @relation("CreatedMatches", fields: [createdById], references: [id])
   status      MatchStatus   @default(waiting)

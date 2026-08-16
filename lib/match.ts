@@ -70,6 +70,7 @@ export function jsonError(message: string, status = 400) {
 
 type MatchRow = {
   id: string;
+  name?: string;
   status: string;
   createdAt: Date;
   createdBy: { id: string; displayId: string };
@@ -112,6 +113,7 @@ export function toMatchView(
 
   return {
     id: match.id,
+    name: match.name?.trim() || `Match ${match.id.slice(-6).toUpperCase()}`,
     status: match.status as MatchView["status"],
     createdAt: match.createdAt.toISOString(),
     createdBy: {

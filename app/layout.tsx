@@ -16,6 +16,10 @@ const bebas = Bebas_Neue({
 export const metadata: Metadata = {
   title: "Ticket Platform",
   description: "Pick a hidden ticket and join Football or Volleyball.",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

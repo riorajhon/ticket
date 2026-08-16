@@ -37,3 +37,19 @@ export async function GET(
 
   return NextResponse.json({ match: toMatchView(match, user.id, user.isAdmin) });
 }
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  const user = await getCurrentUser();
+  if (!user) return jsonError("Not signed in", 401);
+  if (!user.isAdmin) return jsonError("Only admins can delete a match.", 403);
+
+  const { id } = await context.params;
+  const match = await prisma.match.findUnique({ where: { id } });
+  if (!match) return jsonError("Match not found.", 404);
+
+  await prisma.match.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

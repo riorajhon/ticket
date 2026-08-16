@@ -22,15 +22,21 @@ export async function POST(request: Request) {
   if (!user) return jsonError("Not signed in", 401);
   if (!user.isAdmin) return jsonError("Only admins can create a match.", 403);
 
-  let memberIds: string[] = [];
+  let body: { memberIds?: string[]; name?: string } = {};
   try {
-    const body = (await request.json()) as { memberIds?: string[] };
-    memberIds = [
-      ...new Set((body.memberIds ?? []).map((id) => id.trim().toLowerCase()).filter(Boolean)),
-    ];
+    body = (await request.json()) as { memberIds?: string[]; name?: string };
   } catch {
-    memberIds = [];
+    body = {};
   }
+
+  const name = (body.name ?? "").trim();
+  if (name.length < 1 || name.length > 40) {
+    return jsonError("Enter a match name (1–40 characters).");
+  }
+
+  let memberIds: string[] = [
+    ...new Set((body.memberIds ?? []).map((id) => id.trim().toLowerCase()).filter(Boolean)),
+  ];
 
   if (memberIds.length > 0) {
     const members = await prisma.user.findMany({
@@ -44,6 +50,7 @@ export async function POST(request: Request) {
   const sports = shuffledSports();
   const match = await prisma.match.create({
     data: {
+      name,
       createdById: user.id,
       status: "waiting",
       members: memberIds.length
