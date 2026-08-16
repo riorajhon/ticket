@@ -24,8 +24,11 @@ export async function POST(
       include: { members: true, cards: true, blocks: true },
     });
     if (!match) return { error: "Match not found.", status: 404 };
-    if (match.status !== "active") {
-      return { error: "Wait for the admin to start, then pick one card.", status: 400 };
+    if (match.status === "waiting") {
+      return { error: "Wait for the admin to click Start, then pick one ticket.", status: 400 };
+    }
+    if (match.status === "completed") {
+      return { error: "This match is already complete.", status: 400 };
     }
 
     const blocked = match.blocks.some((block) => block.userId === user.id);
@@ -33,13 +36,10 @@ export async function POST(
       return { error: "You were blocked from this room.", status: 403 };
     }
 
-    const isMember = match.members.some((m) => m.userId === user.id);
-    if (!isMember) {
-      await tx.matchMember.createMany({
-        data: [{ matchId: id, userId: user.id }],
-        skipDuplicates: true,
-      });
-    }
+    await tx.matchMember.createMany({
+      data: [{ matchId: id, userId: user.id }],
+      skipDuplicates: true,
+    });
 
     const alreadyPicked = match.cards.some((c) => c.pickedById === user.id);
     if (alreadyPicked) {

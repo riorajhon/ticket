@@ -151,7 +151,6 @@ export default function MatchPage() {
 
   const canPick =
     match.status === "active" &&
-    match.isMember &&
     !match.isBlocked &&
     match.myPick === null &&
     !busy;
@@ -234,15 +233,15 @@ export default function MatchPage() {
 
         {match.status === "waiting" && (
           <p className="mb-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
-            Cards are hidden. {user.isAdmin
-              ? "Click Start when everyone is ready. Anyone in the room can then pick one card."
-              : "You are in the room. Wait for an admin to click Start, then pick one ticket."}
+            Tickets are hidden. {user.isAdmin
+              ? "Click Start when you are ready. Users can pick even if fewer than 6 people are in the room."
+              : "Wait for an admin to click Start. Then pick one ticket — the room does not need 6 people first."}
           </p>
         )}
 
-        {match.status === "active" && match.isMember && match.myPick === null && (
+        {match.status === "active" && match.myPick === null && (
           <p className="mb-5 rounded-2xl border border-turf-500/30 bg-turf-500/10 px-4 py-3 text-sm text-turf-400">
-            Active — pick exactly one card. You will see Football or Volleyball after your tick.
+            Started — pick one ticket. Your ID is saved on that ticket. When all 6 are taken, Football (3) and Volleyball (3) groups appear.
           </p>
         )}
 

@@ -94,22 +94,24 @@ export function toMatchView(
   const isBlocked = Boolean(match.blocks?.some((block) => block.userId === viewerId));
   const isMember = match.members.some((m) => m.userId === viewerId);
   const completed = match.status === "completed";
-  const groups = completed
-    ? {
-        football: match.cards
-          .filter((c) => c.sport === "football" && c.pickedBy)
-          .map((c) => ({
-            id: (c.pickedById ?? "") as string,
-            displayId: c.pickedBy?.displayId ?? c.pickedById ?? "",
-          })),
-        volleyball: match.cards
-          .filter((c) => c.sport === "volleyball" && c.pickedBy)
-          .map((c) => ({
-            id: (c.pickedById ?? "") as string,
-            displayId: c.pickedBy?.displayId ?? c.pickedById ?? "",
-          })),
-      }
-    : null;
+  const allTicketsTaken = match.cards.filter((c) => c.pickedById).length >= 6;
+  const groups =
+    completed || allTicketsTaken
+      ? {
+          football: match.cards
+            .filter((c) => c.sport === "football" && c.pickedById)
+            .map((c) => ({
+              id: (c.pickedById ?? "") as string,
+              displayId: c.pickedBy?.displayId ?? c.pickedById ?? "",
+            })),
+          volleyball: match.cards
+            .filter((c) => c.sport === "volleyball" && c.pickedById)
+            .map((c) => ({
+              id: (c.pickedById ?? "") as string,
+              displayId: c.pickedBy?.displayId ?? c.pickedById ?? "",
+            })),
+        }
+      : null;
 
   return {
     id: match.id,
