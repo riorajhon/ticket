@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "node scripts/vercel-build.js",
     "start": "next start",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
