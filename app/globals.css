@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(61, 154, 87, 0.18), transparent 55%),
+    radial-gradient(900px 480px at 100% 0%, rgba(224, 122, 61, 0.16), transparent 50%),
+    #07110e;
+  color: #eef6f0;
+}
+
+.ticket-scene {
+  perspective: 1100px;
+}
+
+.ticket-inner {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ticket-scene.revealed .ticket-inner {
+  transform: rotateY(180deg);
+}
+
+.ticket-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 1.1rem;
+  overflow: hidden;
+}
+
+.ticket-back {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      #16382c 0 12px,
+      #1d4638 12px 24px
+    );
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.ticket-front {
+  transform: rotateY(180deg);
+}
+
+.ticket-front.football {
+  background: linear-gradient(160deg, #2f8a4b 0%, #163c28 100%);
+}
+
+.ticket-front.volleyball {
+  background: linear-gradient(160deg, #e58b4a 0%, #8a3c18 100%);
+}
+
+.pitch-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
