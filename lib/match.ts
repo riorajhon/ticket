@@ -1,5 +1,5 @@
 import type { Sport } from "@prisma/client";
-import type { PublicCard } from "./types";
+import type { MatchView, PublicCard } from "./types";
 
 export function shuffle<T>(items: T[]): T[] {
   const next = [...items];
@@ -66,4 +66,79 @@ export function serializeCards(
 
 export function jsonError(message: string, status = 400) {
   return Response.json({ error: message }, { status });
+}
+
+type MatchRow = {
+  id: string;
+  status: string;
+  createdAt: Date;
+  createdBy: { id: string; displayId: string };
+  members: { userId: string; user: { id: string; displayId: string } }[];
+  cards: CardRow[];
+  blocks?: { userId: string; user?: { id: string; displayId: string } }[];
+};
+
+export const matchInclude = {
+  createdBy: true,
+  members: { include: { user: true } },
+  cards: { include: { pickedBy: true } },
+  blocks: { include: { user: true } },
+} as const;
+
+export function toMatchView(
+  match: MatchRow,
+  viewerId: string,
+  isAdmin: boolean,
+): MatchView {
+  const isBlocked = Boolean(match.blocks?.some((block) => block.userId === viewerId));
+  const isMember = match.members.some((m) => m.userId === viewerId);
+  const completed = match.status === "completed";
+  const groups = completed
+    ? {
+        football: match.cards
+          .filter((c) => c.sport === "football" && c.pickedBy)
+          .map((c) => ({
+            id: (c.pickedById ?? "") as string,
+            displayId: c.pickedBy?.displayId ?? c.pickedById ?? "",
+          })),
+        volleyball: match.cards
+          .filter((c) => c.sport === "volleyball" && c.pickedBy)
+          .map((c) => ({
+            id: (c.pickedById ?? "") as string,
+            displayId: c.pickedBy?.displayId ?? c.pickedById ?? "",
+          })),
+      }
+    : null;
+
+  return {
+    id: match.id,
+    status: match.status as MatchView["status"],
+    createdAt: match.createdAt.toISOString(),
+    createdBy: {
+      id: match.createdBy.id,
+      displayId: match.createdBy.displayId,
+    },
+    isMember,
+    isBlocked,
+    members: match.members.map((m) => ({
+      id: m.user.id,
+      displayId: m.user.displayId,
+    })),
+    blocked: isAdmin
+      ? (match.blocks ?? []).map((block) => ({
+          id: block.userId,
+          displayId: block.user?.displayId ?? block.userId,
+        }))
+      : [],
+    cards: serializeCards(
+      match.cards,
+      viewerId,
+      isAdmin,
+      match.status,
+      isMember,
+    ),
+    groups,
+    myPick: match.cards.find((c) => c.pickedById === viewerId)?.position ?? null,
+    pickedCount: match.cards.filter((c) => c.pickedById).length,
+  };
 }

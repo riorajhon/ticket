@@ -64,7 +64,7 @@ export default function HomePage() {
       const res = await fetch("/api/matches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberIds: selected }),
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -101,7 +101,7 @@ export default function HomePage() {
     setPasswordMsg("Password updated.");
   }
 
-  const canCreate = users.length >= 6 && selected.length === 6;
+  const canCreate = true;
   const createdLabel = useMemo(
     () => new Date().toLocaleString(),
     [],
@@ -123,14 +123,14 @@ export default function HomePage() {
           <div className="mb-5 flex items-end justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-white/40">Matches</p>
-              <h1 className="font-display text-5xl">Your tickets</h1>
+              <h1 className="font-display text-5xl">All matches</h1>
             </div>
           </div>
           {matches.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-white/15 p-8 text-white/50">
               No matches yet. {user.isAdmin
-                ? "Select 6 members on the right to create one."
-                : "An admin will add you when a match is created."}
+                ? "Create a match on the right. Anyone can join the room."
+                : "When an admin creates a match, it will show up here for everyone."}
             </div>
           ) : (
             <div className="grid gap-4">
@@ -147,9 +147,13 @@ export default function HomePage() {
                     <StatusBadge status={match.status} />
                   </div>
                   <p className="mt-2 text-sm text-white/50">
-                    {match.pickedCount}/6 picked · created by {match.createdBy.displayId}
+                    {match.pickedCount}/6 picked · {match.members.length} in room · created by{" "}
+                    {match.createdBy.displayId}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
+                    {match.members.length === 0 && (
+                      <span className="text-xs text-white/40">Open to everyone</span>
+                    )}
                     {match.members.map((member) => (
                       <span
                         key={member.id}
@@ -174,38 +178,27 @@ export default function HomePage() {
               <p className="text-xs uppercase tracking-[0.25em] text-white/40">Admin</p>
               <h2 className="font-display text-3xl">Create match</h2>
               <p className="mt-1 text-sm text-white/50">
-                Select exactly 6 members. System generates 3 football and 3 volleyball cards.
+                Create a room anytime. Anyone can join. 6 hidden cards still split into Football and Volleyball.
               </p>
-              <p className="mt-3 text-sm text-turf-400">{selected.length} / 6 selected</p>
+              {users.length > 0 && (
+                <p className="mt-3 text-sm text-white/40">
+                  {users.length} {users.length === 1 ? "person" : "people"} on the platform
+                </p>
+              )}
               <div className="mt-3 max-h-64 space-y-2 overflow-auto pr-1">
-                {users.length < 6 && (
-                  <p className="text-sm text-volley-400">
-                    Need 6 people on the platform first ({users.length} so far).
-                  </p>
-                )}
-                {users.map((item) => {
-                  const on = selected.includes(item.id);
-                  return (
-                    <label
-                      key={item.id}
-                      className={`flex cursor-pointer items-center justify-between rounded-2xl border px-3 py-2 ${
-                        on ? "border-turf-500 bg-turf-500/10" : "border-white/10"
-                      }`}
-                    >
-                      <span>
-                        {item.displayId}
-                        {item.isAdmin && (
-                          <span className="ml-2 text-xs text-white/40">admin</span>
-                        )}
-                      </span>
-                      <input
-                        type="checkbox"
-                        checked={on}
-                        onChange={() => toggleMember(item.id)}
-                      />
-                    </label>
-                  );
-                })}
+                {users.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between rounded-2xl border border-white/10 px-3 py-2"
+                  >
+                    <span>
+                      {item.displayId}
+                      {item.isAdmin && (
+                        <span className="ml-2 text-xs text-white/40">admin</span>
+                      )}
+                    </span>
+                  </div>
+                ))}
               </div>
               {error && <p className="mt-3 text-sm text-volley-400">{error}</p>}
               <button

@@ -96,6 +96,9 @@ export default function MatchPage() {
       <main className="min-h-screen">
         {user && <Nav user={user} />}
         <p className="p-8 text-volley-400">{error}</p>
+        {error.includes("blocked") && (
+          <p className="px-8 text-white/50">An admin removed you from this room.</p>
+        )}
       </main>
     );
   }
@@ -103,8 +106,28 @@ export default function MatchPage() {
   const canPick =
     match.status === "active" &&
     match.isMember &&
+    !match.isBlocked &&
     match.myPick === null &&
     !busy;
+
+  async function blockUser(userId: string, blocked: boolean) {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/matches/${params.id}/block`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, blocked }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Could not update block.");
+        return;
+      }
+      setMatch(data.match);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <main className="min-h-screen pb-16">
@@ -137,8 +160,8 @@ export default function MatchPage() {
         {match.status === "waiting" && (
           <p className="mb-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
             Cards are hidden. {user.isAdmin
-              ? "Click Start when everyone is ready. Players can then pick one card."
-              : "Wait for an admin to click Start. Then you can pick one ticket."}
+              ? "Click Start when everyone is ready. Anyone in the room can then pick one card."
+              : "You are in the room. Wait for an admin to click Start, then pick one ticket."}
           </p>
         )}
 
@@ -149,6 +172,68 @@ export default function MatchPage() {
         )}
 
         {error && <p className="mb-4 text-sm text-volley-400">{error}</p>}
+
+        {(user.isAdmin || match.members.length > 0) && (
+          <section className="mb-6 rounded-3xl border border-white/10 bg-pitch-900/70 p-5">
+            <h2 className="font-display text-3xl">In this room</h2>
+            <p className="mt-1 text-sm text-white/50">
+              {user.isAdmin
+                ? "Anyone can join. Block a user to kick them from this room."
+                : "Everyone on the platform can enter this match."}
+            </p>
+            <ul className="mt-3 space-y-2">
+              {match.members.map((member) => (
+                <li
+                  key={member.id}
+                  className="flex items-center justify-between rounded-2xl bg-black/20 px-4 py-3"
+                >
+                  <span>
+                    {member.displayId}
+                    {member.id === user.id && (
+                      <span className="ml-2 text-xs text-white/40">you</span>
+                    )}
+                  </span>
+                  {user.isAdmin && member.id !== user.id && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void blockUser(member.id, true)}
+                      className="rounded-full border border-volley-500/40 px-3 py-1 text-xs uppercase tracking-widest text-volley-400"
+                    >
+                      Block
+                    </button>
+                  )}
+                </li>
+              ))}
+              {match.members.length === 0 && (
+                <li className="text-sm text-white/40">No one has joined yet.</li>
+              )}
+            </ul>
+            {user.isAdmin && match.blocked.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs uppercase tracking-widest text-white/40">Blocked</p>
+                <ul className="mt-2 space-y-2">
+                  {match.blocked.map((member) => (
+                    <li
+                      key={member.id}
+                      className="flex items-center justify-between rounded-2xl bg-black/20 px-4 py-3 text-white/60"
+                    >
+                      <span>{member.displayId}</span>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void blockUser(member.id, false)}
+                        className="rounded-full border border-white/20 px-3 py-1 text-xs uppercase tracking-widest"
+                      >
+                        Unblock
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {match.cards.map((card) => (

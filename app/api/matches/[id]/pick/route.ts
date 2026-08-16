@@ -21,16 +21,24 @@ export async function POST(
   const result = await prisma.$transaction(async (tx) => {
     const match = await tx.match.findUnique({
       where: { id },
-      include: { members: true, cards: true },
+      include: { members: true, cards: true, blocks: true },
     });
     if (!match) return { error: "Match not found.", status: 404 };
     if (match.status !== "active") {
       return { error: "Wait for the admin to start, then pick one card.", status: 400 };
     }
 
+    const blocked = match.blocks.some((block) => block.userId === user.id);
+    if (blocked) {
+      return { error: "You were blocked from this room.", status: 403 };
+    }
+
     const isMember = match.members.some((m) => m.userId === user.id);
     if (!isMember) {
-      return { error: "You were not selected for this match.", status: 403 };
+      await tx.matchMember.createMany({
+        data: [{ matchId: id, userId: user.id }],
+        skipDuplicates: true,
+      });
     }
 
     const alreadyPicked = match.cards.some((c) => c.pickedById === user.id);

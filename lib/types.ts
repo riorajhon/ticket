@@ -28,7 +28,9 @@ export type MatchView = {
   createdAt: string;
   createdBy: Member;
   isMember: boolean;
+  isBlocked: boolean;
   members: Member[];
+  blocked: Member[];
   cards: PublicCard[];
   groups: Groups;
   myPick: number | null;
