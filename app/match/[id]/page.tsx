@@ -215,23 +215,26 @@ export default function MatchPage() {
       {reveal && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/35">
           <div className="reveal-pop rounded-[2rem] border border-white/15 bg-pitch-900/95 px-10 py-8 text-center shadow-card">
-            <div className="mb-3 flex justify-center sport-spin text-7xl" aria-hidden>
-              {reveal.sport === "football"
-                ? reveal.isGoalkeeper
-                  ? "🧤"
-                  : "⚽"
-                : "🏐"}
+            <div className="mb-3 flex justify-center gap-3 sport-spin text-7xl" aria-hidden>
+              {reveal.sport === "football" ? (
+                reveal.isGoalkeeper ? (
+                  <>
+                    <span>⚽</span>
+                    <span>🧤</span>
+                  </>
+                ) : (
+                  <span>⚽</span>
+                )
+              ) : (
+                <span>🏐</span>
+              )}
             </div>
             <p className="font-display text-6xl tracking-wide">
-              {reveal.sport === "football"
-                ? reveal.isGoalkeeper
-                  ? "GOALKEEPER"
-                  : "FOOTBALL"
-                : "VOLLEYBALL"}
+              {reveal.sport === "football" ? "FOOTBALL" : "VOLLEYBALL"}
             </p>
             {reveal.isGoalkeeper && (
               <p className="mt-2 text-sm font-semibold uppercase tracking-[0.25em] text-yellow-300">
-                🧤 Goalkeeper ticket
+                ⚽ 🧤 Goalkeeper ticket
               </p>
             )}
             {reveal.sport === "football" && !reveal.isGoalkeeper && (
@@ -419,7 +422,7 @@ export default function MatchPage() {
                           <span className="truncate">{member.displayId}</span>
                           {member.isGoalkeeper && (
                             <span className="rounded-full bg-yellow-400/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-pitch-950">
-                              GK
+                              ⚽ GK
                             </span>
                           )}
                         </li>

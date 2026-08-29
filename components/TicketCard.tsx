@@ -39,14 +39,8 @@ export function TicketCard({ card, selectable, mine, onPick }: Props) {
     onPick(card.position);
   }
 
-  const frontEmoji =
-    card.sport === "football" ? (isGoalkeeper ? "🧤" : "⚽") : "🏐";
   const frontTitle =
-    card.sport === "football"
-      ? isGoalkeeper
-        ? "GOALKEEPER"
-        : "FOOTBALL"
-      : "VOLLEYBALL";
+    card.sport === "football" ? "FOOTBALL" : "VOLLEYBALL";
 
   return (
     <div
@@ -160,20 +154,32 @@ export function TicketCard({ card, selectable, mine, onPick }: Props) {
                 </div>
 
                 <div className="flex flex-col items-center gap-1 text-center">
-                  <span
-                    className={`ticket-emoji-main text-6xl ${
-                      revealed ? "sport-spin" : ""
-                    }`}
-                    aria-hidden="true"
-                  >
-                    {frontEmoji}
-                  </span>
+                  {isGoalkeeper ? (
+                    <div
+                      className={`flex items-center gap-2 ${
+                        revealed ? "sport-spin" : ""
+                      }`}
+                      aria-hidden="true"
+                    >
+                      <span className="ticket-emoji-main text-5xl">⚽</span>
+                      <span className="ticket-emoji-main text-5xl">🧤</span>
+                    </div>
+                  ) : (
+                    <span
+                      className={`ticket-emoji-main text-6xl ${
+                        revealed ? "sport-spin" : ""
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {card.sport === "football" ? "⚽" : "🏐"}
+                    </span>
+                  )}
                   <p className="font-display text-[2.4rem] leading-none tracking-wide text-ticket-ink">
                     {frontTitle}
                   </p>
                   {isGoalkeeper && (
                     <span className="ticket-chip ticket-chip-gk">
-                      <span aria-hidden="true">🧤 </span>
+                      <span aria-hidden="true">⚽ 🧤 </span>
                       Goalkeeper
                     </span>
                   )}
