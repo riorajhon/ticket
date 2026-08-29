@@ -32,6 +32,7 @@ export type MatchView = {
   startedAt: string | null;
   readyAt: string | null;
   readySecondsLeft: number;
+  serverNow?: string;
   createdBy: Member;
   isMember: boolean;
   isBlocked: boolean;

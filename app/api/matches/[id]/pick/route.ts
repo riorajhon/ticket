@@ -30,8 +30,9 @@ export async function POST(
     if (match.status === "completed") {
       return { error: "This match is already complete.", status: 400 };
     }
-    if (!isReadyToPick(match.startedAt)) {
-      const left = Math.max(1, readySecondsLeft(match.startedAt));
+    const serverNow = Date.now();
+    if (!isReadyToPick(match.startedAt, serverNow)) {
+      const left = Math.max(1, readySecondsLeft(match.startedAt, serverNow));
       return {
         error: `Get ready — pick opens in ${left}s.`,
         status: 400,

@@ -18,17 +18,21 @@ export async function POST(
     return jsonError("This match already started.");
   }
 
+  const startedAt = new Date();
   const updated = await prisma.match.update({
     where: { id },
     data: {
       status: "active",
-      startedAt: new Date(),
+      startedAt,
     },
   });
 
+  const serverNow = new Date();
   return NextResponse.json({
     ok: true,
     status: updated.status,
-    startedAt: updated.startedAt,
+    startedAt: startedAt.toISOString(),
+    readyAt: new Date(startedAt.getTime() + 5000).toISOString(),
+    serverNow: serverNow.toISOString(),
   });
 }

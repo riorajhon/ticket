@@ -1,5 +1,8 @@
 import type { Sport } from "@prisma/client";
 import type { MatchView, PublicCard } from "./types";
+import { readyAtFrom, readySecondsLeft } from "./ready";
+
+export { READY_SECONDS, isReadyToPick, readyAtFrom, readySecondsLeft } from "./ready";
 
 export function shuffle<T>(items: T[]): T[] {
   const next = [...items];
@@ -71,26 +74,6 @@ export function serializeCards(
     });
 }
 
-export const READY_SECONDS = 5;
-
-export function readyAtFrom(startedAt: Date | string | null | undefined) {
-  if (!startedAt) return null;
-  const start = typeof startedAt === "string" ? new Date(startedAt) : startedAt;
-  return new Date(start.getTime() + READY_SECONDS * 1000);
-}
-
-export function readySecondsLeft(startedAt: Date | string | null | undefined, now = Date.now()) {
-  const readyAt = readyAtFrom(startedAt);
-  if (!readyAt) return 0;
-  return Math.max(0, Math.ceil((readyAt.getTime() - now) / 1000));
-}
-
-export function isReadyToPick(startedAt: Date | string | null | undefined, now = Date.now()) {
-  const readyAt = readyAtFrom(startedAt);
-  if (!readyAt) return false;
-  return now >= readyAt.getTime();
-}
-
 export function jsonError(message: string, status = 400) {
   return Response.json({ error: message }, { status });
 }
@@ -142,6 +125,7 @@ export function toMatchView(
         }
       : null;
 
+  const serverNow = Date.now();
   const readyAt = match.startedAt ? readyAtFrom(match.startedAt) : null;
 
   return {
@@ -151,7 +135,8 @@ export function toMatchView(
     createdAt: match.createdAt.toISOString(),
     startedAt: match.startedAt ? match.startedAt.toISOString() : null,
     readyAt: readyAt ? readyAt.toISOString() : null,
-    readySecondsLeft: readySecondsLeft(match.startedAt),
+    readySecondsLeft: readySecondsLeft(match.startedAt, serverNow),
+    serverNow: new Date(serverNow).toISOString(),
     createdBy: {
       id: match.createdBy.id,
       displayId: match.createdBy.displayId,

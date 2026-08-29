@@ -6,7 +6,11 @@ import { Nav } from "@/components/Nav";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TicketCard } from "@/components/TicketCard";
 import { ReadyOverlay } from "@/components/ReadyOverlay";
-import { readySecondsLeft } from "@/lib/match";
+import {
+  clockSkewMs,
+  readySecondsLeft,
+  serverAlignedNow,
+} from "@/lib/ready";
 import type { MatchView, PublicUser } from "@/lib/types";
 
 export default function MatchPage() {
@@ -17,11 +21,17 @@ export default function MatchPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [clockSkew, setClockSkew] = useState(0);
   const [showReadyFlash, setShowReadyFlash] = useState(false);
   const [reveal, setReveal] = useState<{
     sport: "football" | "volleyball";
     isGoalkeeper: boolean;
   } | null>(null);
+
+  function syncServerClock(serverNow?: string | null) {
+    if (!serverNow) return;
+    setClockSkew(clockSkewMs(serverNow, Date.now()));
+  }
 
   async function loadUser() {
     const res = await fetch("/api/auth");
@@ -41,6 +51,7 @@ export default function MatchPage() {
       setError(data.error || "Could not open match.");
       return;
     }
+    syncServerClock(data.match?.serverNow);
     setMatch(data.match);
     setError("");
   }
@@ -67,10 +78,10 @@ export default function MatchPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const countdown = useMemo(
-    () => (match?.status === "active" ? readySecondsLeft(match.startedAt, now) : 0),
-    [match?.status, match?.startedAt, now],
-  );
+  const countdown = useMemo(() => {
+    if (match?.status !== "active" || !match.startedAt) return 0;
+    return readySecondsLeft(match.startedAt, serverAlignedNow(clockSkew, now));
+  }, [match?.status, match?.startedAt, clockSkew, now]);
   const pickingOpen = match?.status === "active" && countdown === 0;
 
   useEffect(() => {
@@ -92,6 +103,19 @@ export default function MatchPage() {
         setError(data.error || "Could not start.");
         return;
       }
+      syncServerClock(data.serverNow);
+      setMatch((current) =>
+        current
+          ? {
+              ...current,
+              status: "active",
+              startedAt: data.startedAt ?? current.startedAt,
+              readyAt: data.readyAt ?? current.readyAt,
+              serverNow: data.serverNow,
+              readySecondsLeft: 5,
+            }
+          : current,
+      );
       await loadMatch();
     } finally {
       setBusy(false);
@@ -116,7 +140,7 @@ export default function MatchPage() {
 
   async function pickCard(position: number) {
     if (!match || match.status !== "active" || match.myPick !== null) return;
-    if (readySecondsLeft(match.startedAt) > 0) return;
+    if (readySecondsLeft(match.startedAt, serverAlignedNow(clockSkew)) > 0) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/matches/${params.id}/pick`, {
