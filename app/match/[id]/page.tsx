@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TicketCard } from "@/components/TicketCard";
-import { FootballIcon, VolleyballIcon } from "@/components/Icons";
+import { ReadyOverlay } from "@/components/ReadyOverlay";
 import { readySecondsLeft } from "@/lib/match";
 import type { MatchView, PublicUser } from "@/lib/types";
 
@@ -17,6 +17,7 @@ export default function MatchPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [showReadyFlash, setShowReadyFlash] = useState(false);
   const [reveal, setReveal] = useState<{
     sport: "football" | "volleyball";
     isGoalkeeper: boolean;
@@ -71,6 +72,16 @@ export default function MatchPage() {
     [match?.status, match?.startedAt, now],
   );
   const pickingOpen = match?.status === "active" && countdown === 0;
+
+  useEffect(() => {
+    if (countdown > 0) {
+      setShowReadyFlash(true);
+      return;
+    }
+    if (!showReadyFlash) return;
+    const timer = window.setTimeout(() => setShowReadyFlash(false), 950);
+    return () => window.clearTimeout(timer);
+  }, [countdown, showReadyFlash]);
 
   async function startMatch() {
     setBusy(true);
@@ -197,7 +208,10 @@ export default function MatchPage() {
   }
 
   return (
-    <main className="min-h-screen pb-16">
+    <main className="min-h-screen pb-8">
+      {(countdown > 0 || showReadyFlash) && match.status === "active" && (
+        <ReadyOverlay seconds={countdown} matchName={match.name} />
+      )}
       {reveal && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/35">
           <div className="reveal-pop rounded-[2rem] border border-white/15 bg-pitch-900/95 px-10 py-8 text-center shadow-card">
@@ -234,15 +248,13 @@ export default function MatchPage() {
         </div>
       )}
       <Nav user={user} />
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="mx-auto max-w-[1600px] px-3 py-4 md:px-5">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-white/40">
               Room · {match.pickedCount}/6 selected
             </p>
-            <h1 className="font-display text-5xl">
-              {match.name}
-            </h1>
+            <h1 className="font-display text-4xl md:text-5xl">{match.name}</h1>
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge status={match.status} />
@@ -269,157 +281,172 @@ export default function MatchPage() {
           </div>
         </div>
 
-        {match.status === "waiting" && (
-          <p className="mb-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
-            Tickets are hidden. {user.isAdmin
-              ? "Click Start when you are ready. A 5-second countdown begins, then anyone can pick."
-              : "Wait for an admin to click Start. After a 5-second ready timer, pick one ticket."}
-          </p>
-        )}
+        <div className="vote-split">
+          <section className="vote-tickets min-w-0">
+            {match.status === "waiting" && (
+              <p className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+                Tickets are hidden. {user.isAdmin
+                  ? "Click Start when you are ready. A 5-second countdown begins, then anyone can pick."
+                  : "Wait for an admin to click Start. After a 5-second ready timer, pick one ticket."}
+              </p>
+            )}
 
-        {match.status === "active" && countdown > 0 && (
-          <div className="mb-6 flex flex-col items-center justify-center rounded-[2rem] border border-yellow-400/30 bg-yellow-400/10 px-6 py-8 text-center">
-            <p className="text-xs uppercase tracking-[0.3em] text-yellow-200/80">
-              Get ready
-            </p>
-            <p className="mt-2 font-display text-8xl leading-none text-yellow-300">
-              {countdown}
-            </p>
-            <p className="mt-3 text-sm text-white/70">
-              Tickets open when the timer hits 0
-            </p>
-          </div>
-        )}
+            {pickingOpen && match.myPick === null && (
+              <p className="mb-4 rounded-2xl border border-turf-500/30 bg-turf-500/10 px-4 py-3 text-sm text-turf-400">
+                Go — pick one ticket. Your ID is saved on that ticket.
+              </p>
+            )}
 
-        {pickingOpen && match.myPick === null && (
-          <p className="mb-5 rounded-2xl border border-turf-500/30 bg-turf-500/10 px-4 py-3 text-sm text-turf-400">
-            Go — pick one ticket. Your ID is saved on that ticket. When all 6 are taken, Football (3) and Volleyball (3) groups appear.
-          </p>
-        )}
+            {error && <p className="mb-4 text-sm text-volley-400">{error}</p>}
 
-        {error && <p className="mb-4 text-sm text-volley-400">{error}</p>}
-
-        {(user.isAdmin || match.members.length > 0) && (
-          <section className="mb-6 rounded-3xl border border-white/10 bg-pitch-900/70 p-5">
-            <h2 className="font-display text-3xl">In this room</h2>
-            <p className="mt-1 text-sm text-white/50">
-              {user.isAdmin
-                ? "Anyone can join. Block a user to kick them from this room."
-                : "Everyone on the platform can enter this match."}
-            </p>
-            <ul className="mt-3 space-y-2">
-              {match.members.map((member) => (
-                <li
-                  key={member.id}
-                  className="flex items-center justify-between rounded-2xl bg-black/20 px-4 py-3"
-                >
-                  <span>
-                    {member.displayId}
-                    {member.id === user.id && (
-                      <span className="ml-2 text-xs text-white/40">you</span>
-                    )}
-                  </span>
-                  {user.isAdmin && member.id !== user.id && (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void blockUser(member.id, true)}
-                      className="rounded-full border border-volley-500/40 px-3 py-1 text-xs uppercase tracking-widest text-volley-400"
-                    >
-                      Block
-                    </button>
-                  )}
-                </li>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+              {match.cards.map((card) => (
+                <TicketCard
+                  key={card.position}
+                  card={card}
+                  mine={match.myPick === card.position}
+                  selectable={canPick && !card.taken}
+                  onPick={(position) => void pickCard(position)}
+                />
               ))}
-              {match.members.length === 0 && (
-                <li className="text-sm text-white/40">No one has joined yet.</li>
-              )}
-            </ul>
-            {user.isAdmin && match.blocked.length > 0 && (
-              <div className="mt-4">
-                <p className="text-xs uppercase tracking-widest text-white/40">Blocked</p>
-                <ul className="mt-2 space-y-2">
-                  {match.blocked.map((member) => (
-                    <li
-                      key={member.id}
-                      className="flex items-center justify-between rounded-2xl bg-black/20 px-4 py-3 text-white/60"
-                    >
-                      <span>{member.displayId}</span>
+            </div>
+
+            {match.myPick !== null && match.status !== "completed" && (
+              <p className="mt-5 text-center text-white/70">
+                You picked ticket {match.myPick + 1}. Waiting for the other players…
+              </p>
+            )}
+          </section>
+
+          <aside className="vote-side space-y-3">
+            <section className="rounded-3xl border border-white/10 bg-pitch-900/80 p-4">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-white/40">Progress</p>
+              <p className="mt-1 font-display text-3xl">{match.pickedCount}/6</p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-turf-500 transition-all duration-500"
+                  style={{ width: `${(match.pickedCount / 6) * 100}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-white/50">
+                {match.status === "waiting"
+                  ? "Waiting for Start"
+                  : match.status === "completed"
+                    ? "Complete"
+                    : pickingOpen
+                      ? "Voting open"
+                      : "Get ready…"}
+              </p>
+            </section>
+
+            <section className="rounded-3xl border border-white/10 bg-pitch-900/80 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-display text-2xl">Users</h2>
+                <span className="text-xs text-white/40">{match.members.length}</span>
+              </div>
+              <ul className="mt-3 max-h-56 space-y-2 overflow-auto pr-1">
+                {match.members.map((member) => (
+                  <li
+                    key={member.id}
+                    className="flex items-center justify-between gap-2 rounded-2xl bg-black/25 px-3 py-2 text-sm"
+                  >
+                    <span className="truncate">
+                      {member.displayId}
+                      {member.id === user.id && (
+                        <span className="ml-1 text-[10px] text-white/40">you</span>
+                      )}
+                    </span>
+                    {user.isAdmin && member.id !== user.id && (
                       <button
                         type="button"
                         disabled={busy}
-                        onClick={() => void blockUser(member.id, false)}
-                        className="rounded-full border border-white/20 px-3 py-1 text-xs uppercase tracking-widest"
+                        onClick={() => void blockUser(member.id, true)}
+                        className="shrink-0 rounded-full border border-volley-500/40 px-2 py-0.5 text-[10px] uppercase tracking-widest text-volley-400"
                       >
-                        Unblock
+                        Block
                       </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
-        )}
-
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          {match.cards.map((card) => (
-            <TicketCard
-              key={card.position}
-              card={card}
-              mine={match.myPick === card.position}
-              selectable={canPick && !card.taken}
-              onPick={(position) => void pickCard(position)}
-            />
-          ))}
-        </div>
-
-        {match.myPick !== null && match.status !== "completed" && (
-          <p className="mt-6 text-center text-white/70">
-            You picked ticket {match.myPick + 1}. Waiting for the other players…
-          </p>
-        )}
-
-        {match.groups && (
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            <section className="rounded-3xl border border-turf-500/30 bg-turf-500/10 p-5">
-              <div className="mb-3 flex items-center gap-3">
-                <FootballIcon className="h-8 w-8" />
-                <h2 className="font-display text-3xl">Football</h2>
-              </div>
-              <ul className="space-y-2">
-                {match.groups.football.map((member) => (
-                  <li
-                    key={member.id}
-                    className="flex items-center justify-between rounded-2xl bg-black/20 px-4 py-3"
-                  >
-                    <span>{member.displayId}</span>
-                    {member.isGoalkeeper && (
-                      <span className="rounded-full bg-yellow-400/90 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-pitch-950">
-                        GK
-                      </span>
                     )}
                   </li>
                 ))}
+                {match.members.length === 0 && (
+                  <li className="text-sm text-white/40">No one yet</li>
+                )}
               </ul>
+              {user.isAdmin && match.blocked.length > 0 && (
+                <div className="mt-3 border-t border-white/10 pt-3">
+                  <p className="text-[10px] uppercase tracking-widest text-white/40">Blocked</p>
+                  <ul className="mt-2 space-y-2">
+                    {match.blocked.map((member) => (
+                      <li
+                        key={member.id}
+                        className="flex items-center justify-between gap-2 rounded-2xl bg-black/25 px-3 py-2 text-sm text-white/60"
+                      >
+                        <span className="truncate">{member.displayId}</span>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void blockUser(member.id, false)}
+                          className="shrink-0 rounded-full border border-white/20 px-2 py-0.5 text-[10px] uppercase tracking-widest"
+                        >
+                          Unblock
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </section>
-            <section className="rounded-3xl border border-volley-500/30 bg-volley-500/10 p-5">
-              <div className="mb-3 flex items-center gap-3">
-                <VolleyballIcon className="h-8 w-8" />
-                <h2 className="font-display text-3xl">Volleyball</h2>
-              </div>
-              <ul className="space-y-2">
-                {match.groups.volleyball.map((member) => (
-                  <li
-                    key={member.id}
-                    className="rounded-2xl bg-black/20 px-4 py-3"
-                  >
-                    {member.displayId}
-                  </li>
-                ))}
-              </ul>
+
+            <section className="rounded-3xl border border-white/10 bg-pitch-900/80 p-4">
+              <h2 className="font-display text-2xl">Result</h2>
+              {!match.groups ? (
+                <p className="mt-2 text-sm text-white/45">
+                  Groups appear when all 6 tickets are taken.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  <div className="rounded-2xl border border-turf-500/30 bg-turf-500/10 p-3">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span aria-hidden="true">⚽</span>
+                      <h3 className="font-display text-xl">Football</h3>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {match.groups.football.map((member) => (
+                        <li
+                          key={member.id}
+                          className="flex items-center justify-between rounded-xl bg-black/20 px-2.5 py-1.5 text-sm"
+                        >
+                          <span className="truncate">{member.displayId}</span>
+                          {member.isGoalkeeper && (
+                            <span className="rounded-full bg-yellow-400/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-pitch-950">
+                              GK
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="rounded-2xl border border-volley-500/30 bg-volley-500/10 p-3">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span aria-hidden="true">🏐</span>
+                      <h3 className="font-display text-xl">Volleyball</h3>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {match.groups.volleyball.map((member) => (
+                        <li
+                          key={member.id}
+                          className="rounded-xl bg-black/20 px-2.5 py-1.5 text-sm"
+                        >
+                          {member.displayId}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
             </section>
-          </div>
-        )}
+          </aside>
+        </div>
       </div>
     </main>
   );

@@ -310,3 +310,207 @@ body {
 .reveal-pop {
   animation: reveal-banner 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+.ready-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ready-overlay-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(250, 204, 21, 0.28), transparent 42%),
+    radial-gradient(circle at 20% 80%, rgba(61, 154, 87, 0.28), transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(224, 122, 61, 0.24), transparent 36%),
+    rgba(4, 10, 8, 0.92);
+  backdrop-filter: blur(10px);
+  animation: ready-fade-in 0.35s ease-out both;
+}
+
+.ready-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.ready-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(253, 224, 71, 0.85);
+  animation: ready-rise 0.5s ease-out both;
+}
+
+.ready-match {
+  margin-top: 0.6rem;
+  font-family: var(--font-bebas), Impact, sans-serif;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  letter-spacing: 0.06em;
+  color: #f7efe2;
+  animation: ready-rise 0.55s ease-out both;
+}
+
+.ready-ring {
+  position: relative;
+  margin-top: 1.75rem;
+  width: min(68vw, 280px);
+  height: min(68vw, 280px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ready-ring-spin {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 4px solid rgba(250, 204, 21, 0.18);
+  border-top-color: #facc15;
+  border-right-color: #3d9a57;
+  animation: ready-spin 1s linear infinite;
+  box-shadow:
+    0 0 40px rgba(250, 204, 21, 0.25),
+    inset 0 0 40px rgba(250, 204, 21, 0.08);
+}
+
+.ready-number {
+  font-family: var(--font-bebas), Impact, sans-serif;
+  font-size: clamp(7rem, 28vw, 12rem);
+  line-height: 1;
+  color: #fde047;
+  text-shadow:
+    0 0 30px rgba(250, 204, 21, 0.55),
+    0 12px 40px rgba(0, 0, 0, 0.45);
+  animation: ready-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ready-go {
+  margin-top: 1.5rem;
+  font-family: var(--font-bebas), Impact, sans-serif;
+  font-size: clamp(6rem, 24vw, 10rem);
+  line-height: 1;
+  color: #6fbf7a;
+  text-shadow:
+    0 0 40px rgba(61, 154, 87, 0.7),
+    0 12px 40px rgba(0, 0, 0, 0.45);
+  animation: ready-go 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ready-hint {
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  animation: ready-rise 0.65s ease-out both;
+}
+
+.ready-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ready-float {
+  position: absolute;
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  opacity: 0.55;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
+  animation: ready-drift 4.5s ease-in-out infinite;
+}
+
+.ready-float.f1 { top: 12%; left: 12%; animation-delay: 0s; }
+.ready-float.f2 { top: 18%; right: 14%; animation-delay: 0.4s; }
+.ready-float.f3 { bottom: 18%; left: 16%; animation-delay: 0.8s; }
+.ready-float.f4 { bottom: 14%; right: 12%; animation-delay: 1.1s; }
+.ready-float.f5 { top: 42%; left: 6%; animation-delay: 0.2s; }
+.ready-float.f6 { top: 48%; right: 7%; animation-delay: 0.7s; }
+
+@keyframes ready-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ready-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ready-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.35) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.12) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes ready-go {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ready-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ready-drift {
+  0%, 100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-18px) rotate(8deg);
+  }
+}
+
+.vote-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .vote-split {
+    grid-template-columns: 20fr 4fr;
+    gap: 1.25rem;
+  }
+
+  .vote-side {
+    position: sticky;
+    top: 4.5rem;
+    max-height: calc(100vh - 5.5rem);
+    overflow: auto;
+  }
+}
