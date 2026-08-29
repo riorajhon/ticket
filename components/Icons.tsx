@@ -35,6 +35,23 @@ export function VolleyballIcon({ className = "h-10 w-10" }: { className?: string
   );
 }
 
+export function GoalkeeperMark({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} fill="none" aria-hidden>
+      <rect x="10" y="18" width="44" height="28" rx="6" fill="#f4f0e6" />
+      <path d="M18 24h28M18 32h28M18 40h28" stroke="#1b1b1b" strokeWidth="3" />
+      <path d="M32 12v8M26 16h12" stroke="#facc15" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="32" cy="34" r="10" fill="#facc15" />
+      <path
+        d="M27 34h10M32 29v10"
+        stroke="#1b1b1b"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function TicketMark({ className = "h-8 w-8" }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" className={className} fill="none" aria-hidden>

@@ -20,8 +20,15 @@ export async function POST(
 
   const updated = await prisma.match.update({
     where: { id },
-    data: { status: "active" },
+    data: {
+      status: "active",
+      startedAt: new Date(),
+    },
   });
 
-  return NextResponse.json({ ok: true, status: updated.status });
+  return NextResponse.json({
+    ok: true,
+    status: updated.status,
+    startedAt: updated.startedAt,
+  });
 }

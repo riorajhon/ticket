@@ -10,11 +10,13 @@ export type PublicCard = {
   pickedById?: string | null;
   pickedByDisplay?: string | null;
   sport?: "football" | "volleyball";
+  isGoalkeeper?: boolean;
 };
 
 export type Member = {
   id: string;
   displayId: string;
+  isGoalkeeper?: boolean;
 };
 
 export type Groups = {
@@ -27,6 +29,9 @@ export type MatchView = {
   name: string;
   status: "waiting" | "active" | "completed";
   createdAt: string;
+  startedAt: string | null;
+  readyAt: string | null;
+  readySecondsLeft: number;
   createdBy: Member;
   isMember: boolean;
   isBlocked: boolean;

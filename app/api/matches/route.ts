@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { jsonError, matchInclude, shuffledSports, toMatchView } from "@/lib/match";
+import { jsonError, matchInclude, shuffledTickets, toMatchView } from "@/lib/match";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const sports = shuffledSports();
+  const tickets = shuffledTickets();
   const match = await prisma.match.create({
     data: {
       name,
@@ -57,7 +57,11 @@ export async function POST(request: Request) {
         ? { create: memberIds.map((userId) => ({ userId })) }
         : undefined,
       cards: {
-        create: sports.map((sport, position) => ({ position, sport })),
+        create: tickets.map((ticket, position) => ({
+          position,
+          sport: ticket.sport,
+          isGoalkeeper: ticket.isGoalkeeper,
+        })),
       },
     },
     include: matchInclude,

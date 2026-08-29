@@ -82,33 +82,101 @@ body {
   position: absolute;
   inset: 0;
   backface-visibility: hidden;
-  border-radius: 1.1rem;
+  border-radius: 1.15rem;
   overflow: hidden;
 }
 
-.ticket-back {
-  background:
-    repeating-linear-gradient(
-      135deg,
-      #16382c 0 12px,
-      #1d4638 12px 24px
-    );
+.ticket-paper {
+  height: 100%;
+  border-radius: 1.15rem;
   box-shadow:
     0 18px 40px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.ticket-paper-back {
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.45), transparent 28%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(90, 60, 30, 0.04) 0 2px,
+      transparent 2px 4px
+    ),
+    linear-gradient(165deg, #f6ead4 0%, #e8d4b2 48%, #d9c19a 100%);
+}
+
+.ticket-paper-football {
+  background:
+    radial-gradient(circle at 80% 12%, rgba(255, 255, 255, 0.35), transparent 30%),
+    linear-gradient(165deg, #9adf9f 0%, #4f9f5f 45%, #2d6b3d 100%);
+}
+
+.ticket-paper-gk {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 245, 160, 0.55), transparent 34%),
+    linear-gradient(165deg, #ffe08a 0%, #6fbf7a 42%, #2f7a45 100%);
+}
+
+.ticket-paper-volleyball {
+  background:
+    radial-gradient(circle at 78% 14%, rgba(255, 255, 255, 0.35), transparent 30%),
+    linear-gradient(165deg, #ffc089 0%, #e07a3d 48%, #b24c16 100%);
+}
+
+.ticket-stripe {
+  height: 10px;
+  width: 100%;
+  opacity: 0.95;
+}
+
+.ticket-stripe-mystery {
+  background: repeating-linear-gradient(
+    90deg,
+    #2f6b45 0 10px,
+    #e07a3d 10px 20px,
+    #c9a227 20px 30px
+  );
+}
+
+.ticket-stripe-football {
+  background: repeating-linear-gradient(
+    90deg,
+    #163c28 0 8px,
+    #f4f0e6 8px 16px
+  );
+}
+
+.ticket-stripe-gk {
+  background: repeating-linear-gradient(
+    90deg,
+    #1a120b 0 8px,
+    #facc15 8px 16px
+  );
+}
+
+.ticket-stripe-volleyball {
+  background: repeating-linear-gradient(
+    90deg,
+    #8a3c18 0 8px,
+    #f4f0e6 8px 16px
+  );
+}
+
+.ticket-back {
+  background: transparent;
 }
 
 .ticket-front {
   transform: rotateY(180deg);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  background: transparent;
+  box-shadow: none;
 }
 
-.ticket-front.football {
-  background: linear-gradient(160deg, #2f8a4b 0%, #163c28 100%);
-}
-
+.ticket-front.football,
+.ticket-front.football.goalkeeper,
 .ticket-front.volleyball {
-  background: linear-gradient(160deg, #e58b4a 0%, #8a3c18 100%);
+  background: transparent;
+  box-shadow: none;
 }
 
 .ticket-notch {
@@ -117,6 +185,7 @@ body {
   height: 18px;
   background: #07110e;
   border-radius: 999px;
+  z-index: 3;
 }
 
 .ticket-notch.left {
@@ -129,12 +198,66 @@ body {
   top: 46%;
 }
 
-.ticket-stub {
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  bottom: 18%;
-  border-top: 1px dashed rgba(255, 255, 255, 0.28);
+.ticket-perforation {
+  height: 0;
+  border-top: 2px dashed rgba(42, 29, 18, 0.28);
+}
+
+.ticket-perforation.dark {
+  border-top-color: rgba(26, 18, 11, 0.35);
+}
+
+.ticket-barcode {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 28px;
+}
+
+.ticket-barcode span {
+  display: block;
+  height: 100%;
+  background: #2a1d12;
+  border-radius: 1px;
+}
+
+.ticket-barcode.dark span {
+  background: #1a120b;
+}
+
+.ticket-emoji-bounce {
+  animation: ticket-float 2.8s ease-in-out infinite;
+}
+
+.ticket-emoji-main {
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.25));
+}
+
+.ticket-chip {
+  margin-top: 0.25rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.ticket-chip-muted {
+  background: rgba(42, 29, 18, 0.1);
+  color: #6b4f33;
+  font-weight: 600;
+}
+
+.ticket-chip-light {
+  background: rgba(255, 255, 255, 0.55);
+  color: #1a120b;
+  font-weight: 600;
+}
+
+.ticket-chip-gk {
+  background: #facc15;
+  color: #1a120b;
 }
 
 .sport-spin {

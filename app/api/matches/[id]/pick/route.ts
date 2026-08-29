@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { jsonError } from "@/lib/match";
+import { isReadyToPick, jsonError, readySecondsLeft } from "@/lib/match";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
@@ -29,6 +29,13 @@ export async function POST(
     }
     if (match.status === "completed") {
       return { error: "This match is already complete.", status: 400 };
+    }
+    if (!isReadyToPick(match.startedAt)) {
+      const left = Math.max(1, readySecondsLeft(match.startedAt));
+      return {
+        error: `Get ready — pick opens in ${left}s.`,
+        status: 400,
+      };
     }
 
     const blocked = match.blocks.some((block) => block.userId === user.id);
@@ -71,12 +78,21 @@ export async function POST(
       });
     }
 
-    return { error: null, status: 200, sport: card.sport };
+    return {
+      error: null,
+      status: 200,
+      sport: card.sport,
+      isGoalkeeper: card.isGoalkeeper,
+    };
   });
 
   if (result.error) {
     return jsonError(result.error, result.status);
   }
 
-  return NextResponse.json({ ok: true, sport: result.sport });
+  return NextResponse.json({
+    ok: true,
+    sport: result.sport,
+    isGoalkeeper: Boolean(result.isGoalkeeper),
+  });
 }

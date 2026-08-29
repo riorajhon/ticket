@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TicketCard } from "@/components/TicketCard";
 import { FootballIcon, VolleyballIcon } from "@/components/Icons";
+import { readySecondsLeft } from "@/lib/match";
 import type { MatchView, PublicUser } from "@/lib/types";
 
 export default function MatchPage() {
@@ -15,7 +16,11 @@ export default function MatchPage() {
   const [match, setMatch] = useState<MatchView | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [revealSport, setRevealSport] = useState<"football" | "volleyball" | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [reveal, setReveal] = useState<{
+    sport: "football" | "volleyball";
+    isGoalkeeper: boolean;
+  } | null>(null);
 
   async function loadUser() {
     const res = await fetch("/api/auth");
@@ -44,10 +49,10 @@ export default function MatchPage() {
   }, []);
 
   useEffect(() => {
-    if (!revealSport) return;
-    const timer = window.setTimeout(() => setRevealSport(null), 1600);
+    if (!reveal) return;
+    const timer = window.setTimeout(() => setReveal(null), 1800);
     return () => window.clearTimeout(timer);
-  }, [revealSport]);
+  }, [reveal]);
 
   useEffect(() => {
     if (!params.id) return;
@@ -55,6 +60,17 @@ export default function MatchPage() {
     const timer = window.setInterval(() => void loadMatch(), 1000);
     return () => window.clearInterval(timer);
   }, [params.id]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 200);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const countdown = useMemo(
+    () => (match?.status === "active" ? readySecondsLeft(match.startedAt, now) : 0),
+    [match?.status, match?.startedAt, now],
+  );
+  const pickingOpen = match?.status === "active" && countdown === 0;
 
   async function startMatch() {
     setBusy(true);
@@ -89,6 +105,7 @@ export default function MatchPage() {
 
   async function pickCard(position: number) {
     if (!match || match.status !== "active" || match.myPick !== null) return;
+    if (readySecondsLeft(match.startedAt) > 0) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/matches/${params.id}/pick`, {
@@ -102,6 +119,7 @@ export default function MatchPage() {
         return;
       }
       if (data.sport && user) {
+        const isGoalkeeper = Boolean(data.isGoalkeeper);
         setMatch((current) => {
           if (!current) return current;
           return {
@@ -114,6 +132,7 @@ export default function MatchPage() {
                     ...card,
                     taken: true,
                     sport: data.sport,
+                    isGoalkeeper,
                     pickedById: user.id,
                     pickedByDisplay: user.displayId,
                   }
@@ -121,7 +140,10 @@ export default function MatchPage() {
             ),
           };
         });
-        setRevealSport(data.sport as "football" | "volleyball");
+        setReveal({
+          sport: data.sport as "football" | "volleyball",
+          isGoalkeeper,
+        });
       }
       await loadMatch();
     } finally {
@@ -150,7 +172,7 @@ export default function MatchPage() {
   }
 
   const canPick =
-    match.status === "active" &&
+    pickingOpen &&
     !match.isBlocked &&
     match.myPick === null &&
     !busy;
@@ -176,22 +198,38 @@ export default function MatchPage() {
 
   return (
     <main className="min-h-screen pb-16">
-      {revealSport && (
+      {reveal && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/35">
           <div className="reveal-pop rounded-[2rem] border border-white/15 bg-pitch-900/95 px-10 py-8 text-center shadow-card">
-            <div className="mb-3 flex justify-center sport-spin">
-              {revealSport === "football" ? (
-                <FootballIcon className="h-20 w-20" />
-              ) : (
-                <VolleyballIcon className="h-20 w-20" />
-              )}
+            <div className="mb-3 flex justify-center sport-spin text-7xl" aria-hidden>
+              {reveal.sport === "football"
+                ? reveal.isGoalkeeper
+                  ? "🧤"
+                  : "⚽"
+                : "🏐"}
             </div>
             <p className="font-display text-6xl tracking-wide">
-              {revealSport === "football" ? "FOOTBALL" : "VOLLEYBALL"}
+              {reveal.sport === "football"
+                ? reveal.isGoalkeeper
+                  ? "GOALKEEPER"
+                  : "FOOTBALL"
+                : "VOLLEYBALL"}
             </p>
-            <p className="mt-2 text-sm uppercase tracking-[0.25em] text-white/50">
-              Your ticket
-            </p>
+            {reveal.isGoalkeeper && (
+              <p className="mt-2 text-sm font-semibold uppercase tracking-[0.25em] text-yellow-300">
+                🧤 Goalkeeper ticket
+              </p>
+            )}
+            {reveal.sport === "football" && !reveal.isGoalkeeper && (
+              <p className="mt-2 text-sm uppercase tracking-[0.25em] text-white/50">
+                ⚽ Common ticket
+              </p>
+            )}
+            {reveal.sport === "volleyball" && (
+              <p className="mt-2 text-sm uppercase tracking-[0.25em] text-white/50">
+                🏐 Your ticket
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -234,14 +272,28 @@ export default function MatchPage() {
         {match.status === "waiting" && (
           <p className="mb-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
             Tickets are hidden. {user.isAdmin
-              ? "Click Start when you are ready. Users can pick even if fewer than 6 people are in the room."
-              : "Wait for an admin to click Start. Then pick one ticket — the room does not need 6 people first."}
+              ? "Click Start when you are ready. A 5-second countdown begins, then anyone can pick."
+              : "Wait for an admin to click Start. After a 5-second ready timer, pick one ticket."}
           </p>
         )}
 
-        {match.status === "active" && match.myPick === null && (
+        {match.status === "active" && countdown > 0 && (
+          <div className="mb-6 flex flex-col items-center justify-center rounded-[2rem] border border-yellow-400/30 bg-yellow-400/10 px-6 py-8 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-yellow-200/80">
+              Get ready
+            </p>
+            <p className="mt-2 font-display text-8xl leading-none text-yellow-300">
+              {countdown}
+            </p>
+            <p className="mt-3 text-sm text-white/70">
+              Tickets open when the timer hits 0
+            </p>
+          </div>
+        )}
+
+        {pickingOpen && match.myPick === null && (
           <p className="mb-5 rounded-2xl border border-turf-500/30 bg-turf-500/10 px-4 py-3 text-sm text-turf-400">
-            Started — pick one ticket. Your ID is saved on that ticket. When all 6 are taken, Football (3) and Volleyball (3) groups appear.
+            Go — pick one ticket. Your ID is saved on that ticket. When all 6 are taken, Football (3) and Volleyball (3) groups appear.
           </p>
         )}
 
@@ -338,9 +390,14 @@ export default function MatchPage() {
                 {match.groups.football.map((member) => (
                   <li
                     key={member.id}
-                    className="rounded-2xl bg-black/20 px-4 py-3"
+                    className="flex items-center justify-between rounded-2xl bg-black/20 px-4 py-3"
                   >
-                    {member.displayId}
+                    <span>{member.displayId}</span>
+                    {member.isGoalkeeper && (
+                      <span className="rounded-full bg-yellow-400/90 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-pitch-950">
+                        GK
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>

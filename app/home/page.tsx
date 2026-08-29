@@ -216,7 +216,7 @@ export default function HomePage() {
               <p className="text-xs uppercase tracking-[0.25em] text-white/40">Admin</p>
               <h2 className="font-display text-3xl">Create match</h2>
               <p className="mt-1 text-sm text-white/50">
-                Name the room, then create it. The system always makes 6 tickets: 3 Football and 3 Volleyball. After you click Start, anyone can pick one ticket even if the room is not full. Groups appear after all 6 are taken.
+                Name the room, then create it. The system always makes 6 tickets: 3 Football (1 common + 2 goalkeeper) and 3 Volleyball. After you click Start, anyone can pick one ticket even if the room is not full. Groups appear after all 6 are taken.
               </p>
               <input
                 value={matchName}

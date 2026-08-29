@@ -24,6 +24,11 @@ const config: Config = {
           500: "#e07a3d",
           600: "#c45f22",
         },
+        ticket: {
+          ink: "#2a1d12",
+          muted: "#5b4630",
+          cream: "#f7efe2",
+        },
       },
       fontFamily: {
         sans: ["var(--font-outfit)", "system-ui", "sans-serif"],
